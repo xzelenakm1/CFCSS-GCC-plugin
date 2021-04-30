@@ -1,0 +1,6 @@
+
+;; Function main (main)
+
+Analyzing function body size: main
+Overall function body time: 19-2 size: 20-3
+With function call overhead time: 19-13 size: 20-5

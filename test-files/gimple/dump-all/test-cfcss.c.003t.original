@@ -1,0 +1,33 @@
+
+;; Function main (null)
+;; enabled by -tree-original
+
+
+{
+  int a[3] = {1, 2, 3};
+  int b[3] = {2, 3, 2};
+  int x[3];
+  int i = 0;
+
+    int a[3] = {1, 2, 3};
+    int b[3] = {2, 3, 2};
+    int x[3];
+    int i = 0;
+  goto <D.1983>;
+  <D.1982>:;
+  if (a[i] < b[i])
+    {
+      x[i] = a[i];
+    }
+  else
+    {
+      x[i] = b[i];
+    }
+  i++ ;
+  <D.1983>:;
+  if (i <= 2) goto <D.1982>; else goto <D.1984>;
+  <D.1984>:;
+  return 0;
+}
+
+
