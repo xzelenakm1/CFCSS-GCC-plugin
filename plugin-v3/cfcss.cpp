@@ -1,5 +1,6 @@
-#include <stdlib.h>
+#include <iostream>
 #include <gcc-plugin.h>
+#include <context.h>
 // #include <coretypes.h>
 // #include <diagnostic.h>
 // #include <gimple.h>
@@ -23,10 +24,19 @@ static struct plugin_gcc_version plugin_ver =
     .basever = "9.3",
 };
 
-static bool plugin_gate(void)
+const struct pass_data cfcss_pass_data = 
 {
-    return true;
-}
+    .type = GIMPLE_PASS,
+	.name = "cfcss",
+	.optinfo_flags = OPTGROUP_NONE,
+	.tv_id = TV_NONE,
+	.properties_required = 0,
+	.properties_provided = 0,
+	.properties_destroyed = 0,
+	.todo_flags_start = 0,
+	.todo_flags_finish = 0,
+};
+
 
 // int index_bb(basic_block bb) {
 //   return bb->index - 2;
@@ -101,53 +111,28 @@ static bool plugin_gate(void)
 //   }
 // }
 
-static unsigned plugin_exec(void)
+void execute_cfcss(function *fun)
 {
-    // unsigned i;
-    // const_tree str, op;
-    // basic_block bb;
-    // gimple stmt;
-    // gimple_stmt_iterator gsi;
-    // int str_count = 0;
-
-    // handle_aliasing();
     
-    // assign_signatures();
-    // compute_differences();
-
-    // FOR_EACH_BB(bb)
-    // {
-      
-
-    //   // printf("%d\n", bb->index - 2);
-      
-    //   // for (gsi=gsi_start_bb(bb); !gsi_end_p(gsi); gsi_next(&gsi))
-    //   // {
-    //   //     stmt = gsi_stmt(gsi);
-    //   //     print_gimple_stmt (stderr, stmt, 0);
-    //   //     for (i=0; i<gimple_num_ops(stmt); ++i)
-    //   //       if ((op = gimple_op(stmt, i)) && (str = is_str_cst(op)))
-    //   //       {
-    //   //           str_count++;
-    //   //       }
-    //   // }
-    //   // printf("\n");
-    // }
-    
-    // printf("Number of readonly strings in source code: %d\n", str_count);
-
-    // free(signatures);
-    // free(differences);
-    // free(adjusting_signatures);
-    return 0;
 }
 
-static struct gimple_opt_pass plugin_pass = 
+struct cfcss_pass : gimple_opt_pass
 {
-    .pass.type = GIMPLE_PASS,
-    .pass.name = "cfcss",
-    .pass.gate = plugin_gate,
-    .pass.execute = plugin_exec,
+    cfcss_pass(gcc::context *ctx)
+        : gimple_opt_pass(cfcss_pass_data, ctx)
+    {
+    }
+
+    unsigned int execute(function *fun)
+    {
+        execute_cfcss(fun);
+        return 0;
+    }
+
+    bool gate(function *fun)
+    {
+        return true;
+    }
 };
 
 int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
@@ -157,7 +142,7 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
      if (strncmp(ver->basever, plugin_ver.basever, strlen("9.3")))
        return -1;
 
-    pass.pass = &plugin_pass.pass;
+    pass.pass = new cfcss_pass(g);
     pass.reference_pass_name = "ssa";
     pass.ref_pass_instance_number = 1;
     pass.pos_op = PASS_POS_INSERT_AFTER;
