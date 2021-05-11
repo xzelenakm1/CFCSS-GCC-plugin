@@ -6,7 +6,7 @@ int x[3];
 int i = 0;
 
 void cfcss_error_handler() {
-    printf("CFCSS detected CFE, exiting program...\n");
+    printf("CFE detected, exiting program...\n");
     exit(1);
 }
 
@@ -19,12 +19,14 @@ int main () {
     while (i < 3) {
         printf("2\n");
         if (a[i] < b[i]) {
+            
             printf("3\n");
             x[i] = a[i];
         }
         else {
             printf("4\n");
             x[i] = b[i];
+
         }
         printf("5\n");
         i++;

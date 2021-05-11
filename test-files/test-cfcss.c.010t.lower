@@ -1,7 +1,6 @@
 
 ;; Function main (main)
 
-Merging blocks 8 and 9
 main ()
 {
   int D.2007;
@@ -19,56 +18,44 @@ main ()
   int D.1992;
   int i.0;
 
-<bb 2>:
   __builtin_puts (&"1"[0]);
-  goto <bb 7>;
-
-<bb 3>:
+  goto <D.1988>;
+  <D.1987>:
   __builtin_puts (&"2"[0]);
   i.0 = i;
   D.1992 = a[i.0];
   i.1 = i;
   D.1994 = b[i.1];
-  if (D.1992 < D.1994)
-    goto <bb 4>;
-  else
-    goto <bb 5>;
-
-<bb 4>:
+  if (D.1992 < D.1994) goto <D.1995>; else goto <D.1996>;
+  <D.1995>:
   __builtin_puts (&"3"[0]);
   i.2 = i;
   i.3 = i;
   D.1999 = a[i.3];
   x[i.2] = D.1999;
-  goto <bb 6>;
-
-<bb 5>:
+  goto <D.2000>;
+  <D.1996>:
   __builtin_puts (&"4"[0]);
   i.4 = i;
   i.5 = i;
   D.2003 = b[i.5];
   x[i.4] = D.2003;
-
-<bb 6>:
+  <D.2000>:
   __builtin_puts (&"5"[0]);
   i.6 = i;
   i.7 = i.6 + 1;
   i = i.7;
-
-<bb 7>:
+  <D.1988>:
   i.8 = i;
-  if (i.8 <= 2)
-    goto <bb 3>;
-  else
-    goto <bb 8>;
-
-<bb 8>:
+  if (i.8 <= 2) goto <D.1987>; else goto <D.1989>;
+  <D.1989>:
   __builtin_puts (&"6"[0]);
   print_line ();
   __builtin_puts (&"7"[0]);
   D.2007 = 0;
+  goto <D.2008>;
+  <D.2008>:
   return D.2007;
-
 }
 
 
@@ -77,10 +64,8 @@ main ()
 
 print_line ()
 {
-<bb 2>:
   __builtin_puts (&"Hello world!"[0]);
   return;
-
 }
 
 
@@ -89,10 +74,8 @@ print_line ()
 
 cfcss_error_handler ()
 {
-<bb 2>:
   __builtin_puts (&"CFE detected, exiting program..."[0]);
   exit (1);
-
 }
 
 

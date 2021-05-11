@@ -1,0 +1,53 @@
+
+;; Function cfcss_error_handler (null)
+;; enabled by -tree-original
+
+
+{
+  extern void exit (int);
+
+  printf ((const char * restrict) "CFE detected, exiting program...\n");
+  exit (1);
+}
+
+
+
+;; Function print_line (null)
+;; enabled by -tree-original
+
+{
+  printf ((const char * restrict) "Hello world!\n");
+}
+
+
+
+;; Function main (null)
+;; enabled by -tree-original
+
+{
+  printf ((const char * restrict) "1\n");
+  goto <D.1988>;
+  <D.1987>:;
+  printf ((const char * restrict) "2\n");
+  if (a[i] < b[i])
+    {
+      printf ((const char * restrict) "3\n");
+      x[i] = a[i];
+    }
+  else
+    {
+      printf ((const char * restrict) "4\n");
+      x[i] = b[i];
+    }
+  printf ((const char * restrict) "5\n");
+  i++ ;
+  <D.1988>:;
+  if (i <= 2) goto <D.1987>; else goto <D.1989>;
+  <D.1989>:;
+  printf ((const char * restrict) "6\n");
+  print_line ();
+  printf ((const char * restrict) "7\n");
+  return 0;
+}
+
+

@@ -206,7 +206,7 @@ void handle_aliasing()
 void insert_instructions()
 {
   basic_block bb, bb_first, bb_correct, bb_correct_first, bb_err;
-  tree G, D, dj, sj, adj_sig, lbl_correct, lbl_err;
+  tree G, D, dj, sj, zero, adj_sig, lbl_correct, lbl_err;
   gimple stmt_assign, stmt_nop, stmt_cond, stmt_call;
   gimple_stmt_iterator gsi, gsi_err;
   edge e, e_end, e_correct, e_err;
@@ -218,18 +218,29 @@ void insert_instructions()
   // create runtime variables for inserting
   G = create_tmp_var (integer_type_node, "G");
   D = create_tmp_var (integer_type_node, "D");
-  DECL_INITIAL (G) = build_int_cst (integer_type_node, signatures[0]);
-  DECL_INITIAL (D) = build_int_cst (integer_type_node, signatures[0]);
+  // DECL_INITIAL (G) = build_int_cst (integer_type_node, 0);
+  // DECL_INITIAL (D) = build_int_cst (integer_type_node, 0);
   mark_sym_for_renaming(G);
   mark_sym_for_renaming(D);
 
   // create constants for inserting
   dj = build_int_cst (integer_type_node, differences[0]);
   sj = build_int_cst (integer_type_node, signatures[0]);
+  zero = build_int_cst (integer_type_node, 0);
+
+  printf("differences[0]: %d\n", differences[0]);
 
   // create error handling block and handle first block
   bb_first = get_bb_by_index(2);
   gsi = gsi_start_bb(bb_first);
+
+  stmt_assign = gimple_build_assign_with_ops(BIT_XOR_EXPR, G, zero, zero);
+  update_stmt(stmt_assign);
+  gsi_insert_before (&gsi, stmt_assign, GSI_NEW_STMT);
+
+  stmt_assign = gimple_build_assign_with_ops(BIT_XOR_EXPR, D, zero, zero);
+  update_stmt(stmt_assign);
+  gsi_insert_after (&gsi, stmt_assign, GSI_NEW_STMT);
 
   stmt_assign = gimple_build_assign_with_ops(BIT_XOR_EXPR, G, G, dj);
   update_stmt(stmt_assign);
@@ -309,7 +320,7 @@ void insert_instructions()
 
     stmt_assign = gimple_build_assign_with_ops(BIT_XOR_EXPR, G, G, dj);
     update_stmt(stmt_assign);
-    gsi_insert_after (&gsi, stmt_assign, GSI_NEW_STMT);
+    gsi_insert_before (&gsi, stmt_assign, GSI_NEW_STMT);
 
     if (is_branch_fan_in_node(bb)) {
       stmt_assign = gimple_build_assign_with_ops(BIT_XOR_EXPR, G, G, D);

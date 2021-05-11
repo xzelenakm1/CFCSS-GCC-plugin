@@ -1,0 +1,18 @@
+
+;; Function cfcss_error_handler (cfcss_error_handler)
+
+Analyzing function body size: cfcss_error_handler
+Overall function body time: 23-0 size: 7-2
+With function call overhead time: 23-10 size: 7-3
+
+;; Function print_line (print_line)
+
+Analyzing function body size: print_line
+Overall function body time: 29-2 size: 12-3
+With function call overhead time: 29-12 size: 12-4
+
+;; Function main (main)
+
+Analyzing function body size: main
+Overall function body time: 151-2 size: 71-3
+With function call overhead time: 151-13 size: 71-5
