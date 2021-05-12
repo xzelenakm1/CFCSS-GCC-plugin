@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <gcc-plugin.h>
 #include <coretypes.h>
-// #include <diagnostic.h>
 #include <gimple.h>
 #include <tree.h>
 #include <tree-flow.h>
@@ -11,6 +10,7 @@
 int plugin_is_GPL_compatible = 1;
 int *signatures, *differences, *adjusting_signatures;
 tree cfcss_error_handler = NULL;
+bool first_function = true;
 
 static struct plugin_info plugin_info =
 {
@@ -31,7 +31,7 @@ static bool plugin_gate(void)
 
 static unsigned dumpcfg(void)
 {
-    brief_dump_cfg(stderr); //**** NEPOZNA VER 9
+    brief_dump_cfg(stderr);
     return 0;
 }
 
@@ -39,11 +39,9 @@ void ALL_BB_print(void)
 {
     basic_block bb;
     gimple_stmt_iterator gsi;
-    //gimple_seq seq;
-    //FOR_EACH_BB(bb)
     FOR_ALL_BB(bb)
     {
-      gimple_dump_bb (bb, stderr, 0, TDF_SLIM); // **** NEFUNGUJE VO VER 9
+      gimple_dump_bb (bb, stderr, 0, TDF_SLIM);
     }
 }
 
@@ -74,60 +72,6 @@ basic_block get_last_bb() {
 basic_block get_first_bb() {
   return get_bb_by_index(2);
 }
-
-gimple get_last_statement_in_bb (basic_block bb) {
-  // gimple_stmt_iterator gsi;
-  // gimple stmt;
-  // int i;
-
-  // for (si = gsi_start_bb (bb); !gsi_end_p (si); gsi_next (&si)) {
-
-  // }
-
-  // stmt = gsi_stmt (gsi);
-  // print_gimple_stmt (stderr, gsi_stmt(gsi), 0, TDF_SLIM);
-  printf("---------------- before split --------- \n");
-  // e = split_block (bbs, stmts); 
-  // e = split_block_after_labels (e->dest);
-
-  printf("---------------- after split --------- \n");
-
-  printf("%d\n", bb->index);
-
-  gimple_stmt_iterator gsi = gsi_last_bb(bb);
-  gsi_prev(&gsi);
-  gimple stmt = gsi_stmt(gsi);
-  return stmt;
-}
-
-// void split_block_err(basic_block bb, gimple stmt, basic_block err_bb) {
-
-//   e_after = split_block (bb, gsi_stmt (gsi));
-//   execute_on_growing_pred (e_after);
-//   bb_after = e_after->dest;
-
-//   if (eafter->flags & EDGE_FALLTHRU)
-//   {
-//     eafter->flags = eafter->flags - EDGE_FALLTHRU;
-//   }
-//   if (!(eafter->flags & EDGE_TRUE_VALUE))
-//   {
-//     eafter->flags = eafter->flags + EDGE_TRUE_VALUE;
-//   }
-
-//   enew = make_edge (bb, bbend, EDGE_FALSE_VALUE);
-
-//   if (dom_info_available_p (CDI_DOMINATORS))
-//   {
-//     set_immediate_dominator (CDI_DOMINATORS, bbend, recompute_dominator (CDI_DOMINATORS, bbend));
-// 	  set_immediate_dominator (CDI_DOMINATORS, bb, recompute_dominator (CDI_DOMINATORS, bb));
-//   }
-//   if (dom_info_available_p (CDI_POST_DOMINATORS))
-//   {
-// 	  set_immediate_dominator (CDI_POST_DOMINATORS, bbend, recompute_dominator (CDI_POST_DOMINATORS, bbend));
-// 	  set_immediate_dominator (CDI_POST_DOMINATORS, bb, recompute_dominator (CDI_POST_DOMINATORS, bb));
-//   }
-// }
 
 void assign_signatures() {
   basic_block bb;
@@ -191,10 +135,6 @@ void compute_differences() {
     else {
       compute_difference_multi(bb);
     }
-
-    // int bb_index = index_bb(bb);
-    // signatures[bb_index] = bb_index;
-    // printf("bb index: %d, predecessor count: %d\n", signatures[bb_index], EDGE_COUNT (bb->preds));
   }
 }
 
@@ -218,8 +158,6 @@ void insert_instructions()
   // create runtime variables for inserting
   G = create_tmp_var (integer_type_node, "G");
   D = create_tmp_var (integer_type_node, "D");
-  // DECL_INITIAL (G) = build_int_cst (integer_type_node, 0);
-  // DECL_INITIAL (D) = build_int_cst (integer_type_node, 0);
   mark_sym_for_renaming(G);
   mark_sym_for_renaming(D);
 
@@ -380,21 +318,30 @@ static unsigned plugin_exec(void)
     edge e_after, eend;
     int str_count = 0;
 
-    ALL_BB_print();
-    // dumpcfg();
+    // ALL_BB_print();
 
     // if (n_basic_blocks <= 1) {
     //   printf("Function with only one BB, therefore not implementing CFCSS method\n");
     //   return 0;
     // }
-
-    if (get_identifier(current_function_name()) == get_identifier("cfcss_error_handler"))
-    {
-      if (cfcss_error_handler == NULL)
+    
+    // first compiled function should be cfcss_error_handler
+    if (first_function) {
+      if (get_identifier(current_function_name()) == get_identifier("cfcss_error_handler"))
       {
-        cfcss_error_handler = current_function_decl;
+        if (cfcss_error_handler == NULL)
+        {
+          // setting cfcss_error_handler function from compiled code to tree variable
+          cfcss_error_handler = current_function_decl;
+        }
+        first_function = false;
+        return 0;
       }
-      return 0;
+      // cfcss_error_handler is not first function in compiled code
+      else {
+        printf("Error: cfcss_error_handler not declared as first function in compiled source code, exiting compilation...\n");
+        exit(1);
+      }
     }
 
     printf("****************** START CFCSS ********************\n");
@@ -408,46 +355,9 @@ static unsigned plugin_exec(void)
 
     printf("****************** END CFCSS ********************\n");
 
-    ALL_BB_print();
-    
-
-
-    // FOR_EACH_BB(bb)
-    // {
-    //   bbs = bb;
-    //   gsi=gsi_last_bb(bb);
-    // }
-    // gsi_prev(&gsi);
-    // gsi_prev(&gsi);
-
-    // create error handling block
-    // basic_block first_bb = get_bb_by_index(2);
-    // gimple last_statement = get_last_statement_in_bb(first_bb);
-    // gimple nop = gimple_build_nop();
-    // gsi = gsi_last_bb(first_bb);
-    // gsi_insert_after (&gsi, nop, GSI_SAME_STMT);
-    // update_stmt(nop);
-    // // last_statement = gsi_stmt(gsi);
-    // eend = split_block (first_bb, gsi_stmt(gsi));
-    // printf("************************ VERIFY FLOW ZA EEND **********************\n");
-    // verify_flow_info ();
-
-    // // execute_on_growing_pred (eend);
-    // // bbend = eend->dest;
-    // printf("************************ VERIFY FLOW ZA EXECUTE ON GROWING PRED **********************\n");
-    // verify_flow_info ();
-    // split_block_err(get_last_bb(), get_last_statement_in_bb(get_last_bb()));
-    // e = split_block (bbs, stmts); 
-    // e = split_block_after_labels (e->dest);
-
-
-
     // ALL_BB_print();
-    // print_gimple_stmt (stderr, get_last_statement_in_bb(get_last_bb()), 0, TDF_SLIM);
-    // dumpcfg();
-
-    // printf ("%d %d\n", last_basic_block, );
-    // gimple_dump_bb (get_last_bb(), stderr, 0, TDF_SLIM);
+    
+    // verify_flow_info();
 
     free(signatures);
     free(differences);
