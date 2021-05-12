@@ -1,5 +1,6 @@
 // C program for implementation of Bubble sort
 #include <stdio.h>
+#include <stdlib.h>
 
 void cfcss_error_handler() {
     printf("CFE detected, exiting program...\n");
