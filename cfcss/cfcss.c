@@ -12,19 +12,19 @@ int *signatures, *differences, *adjusting_signatures;
 tree cfcss_error_handler = NULL;
 bool first_function = true;
 
-static struct plugin_info plugin_info =
+static struct plugin_info cfcss_info =
 {
     .version = "34",
     .help = "This is my first plugin",
 };
 
 
-static struct plugin_gcc_version plugin_ver =
+static struct plugin_gcc_version cfcss_ver =
 {
     .basever = "4.6",
 };
 
-static bool plugin_gate(void)
+static bool cfcss_gate(void)
 {
     return true;
 }
@@ -308,7 +308,7 @@ void insert_instructions()
   }
 }
 
-static unsigned plugin_exec(void)
+static unsigned cfcss_exec(void)
 {
     unsigned i;
     const_tree str, op;
@@ -365,12 +365,12 @@ static unsigned plugin_exec(void)
     return 0;
 }
 
-static struct gimple_opt_pass plugin_pass = 
+static struct gimple_opt_pass cfcss_pass = 
 {
     .pass.type = GIMPLE_PASS,
     .pass.name = "cfcss",
-    .pass.gate = plugin_gate,
-    .pass.execute = plugin_exec,
+    .pass.gate = cfcss_gate,
+    .pass.execute = cfcss_exec,
 };
 
 int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
@@ -378,10 +378,10 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
     struct register_pass_info pass;
     printf("initializing plugin\n");
 
-    if (strncmp(ver->basever, plugin_ver.basever, strlen("4.6")))
+    if (strncmp(ver->basever, cfcss_ver.basever, strlen("4.6")))
       return -1;
 
-    pass.pass = &plugin_pass.pass;
+    pass.pass = &cfcss_pass.pass;
     pass.reference_pass_name = "ssa";
     pass.ref_pass_instance_number = 1;
     pass.pos_op = PASS_POS_INSERT_AFTER;
@@ -389,7 +389,7 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
     printf("end of plugin init\n");
 
     register_callback("cfcss", PLUGIN_PASS_MANAGER_SETUP, NULL, &pass);
-    register_callback("cfcss", PLUGIN_INFO, NULL, &plugin_info);
+    register_callback("cfcss", PLUGIN_INFO, NULL, &cfcss_info);
 
     return 0;
 }

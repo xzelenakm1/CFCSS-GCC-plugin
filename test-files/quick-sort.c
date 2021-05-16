@@ -1,6 +1,12 @@
 // Quick sort in C
 
 #include <stdio.h>
+#include <stdlib.h>
+
+void cfcss_error_handler() {
+    printf("CFE detected, exiting program...\n");
+    exit(1);
+}
 
 // function to swap elements
 void swap(int *a, int *b) {
@@ -17,10 +23,11 @@ int partition(int array[], int low, int high) {
   
   // pointer for greater element
   int i = (low - 1);
+  int j;
 
   // traverse each element of the array
   // compare them with the pivot
-  for (int j = low; j < high; j++) {
+  for (j = low; j < high; j++) {
     if (array[j] <= pivot) {
         
       // if element smaller than pivot is found
@@ -57,7 +64,8 @@ void quickSort(int array[], int low, int high) {
 
 // function to print array elements
 void printArray(int array[], int size) {
-  for (int i = 0; i < size; ++i) {
+  int i;
+  for (i = 0; i < size; ++i) {
     printf("%d  ", array[i]);
   }
   printf("\n");

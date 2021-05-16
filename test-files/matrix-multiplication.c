@@ -3,6 +3,11 @@
 #include <stdlib.h>
 #define N 4
 
+void cfcss_error_handler() {
+    printf("CFE detected, exiting program...\n");
+    exit(1);
+}
+
 // This function multiplies mat1[][] and mat2[][],
 // and stores the result in res[][]
 void multiply(int mat1[][N], int mat2[][N], int res[][N])
@@ -15,11 +20,6 @@ void multiply(int mat1[][N], int mat2[][N], int res[][N])
                 res[i][j] += mat1[i][k] * mat2[k][j];
         }
     }
-}
-
-void cfcss_error_handler() {
-    printf("CFE detected, exiting program...\n");
-    exit(1);
 }
  
 int main()

@@ -1,7 +1,13 @@
 // C program for insertion sort
 #include <math.h>
 #include <stdio.h>
- 
+#include <stdlib.h>
+
+void cfcss_error_handler() {
+    printf("CFE detected, exiting program...\n");
+    exit(1);
+}
+
 /* Function to sort an array using insertion sort*/
 void insertionSort(int arr[], int n)
 {
