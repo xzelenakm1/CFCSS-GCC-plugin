@@ -50,7 +50,7 @@ int index_bb(basic_block bb) {
 }
 
 bool is_branch_fan_in_node(basic_block bb) {
-  return !single_pred_p(bb);
+  return !single_pred_p(bb); // function returns true, if block has only one predecessor
 }
 
 basic_block get_bb_by_index(int index) {
@@ -73,50 +73,54 @@ basic_block get_first_bb() {
   return get_bb_by_index(2);
 }
 
+// assigns signatures to each basic block
 void assign_signatures() {
   basic_block bb;
   signatures = (int *) xmalloc(n_basic_blocks * sizeof(int));
 
   FOR_EACH_BB(bb) {
     int bb_index = index_bb(bb);
-    signatures[bb_index] = bb_index;
+    signatures[bb_index] = bb_index; // signature of basic block is its index
   }
 }
 
+// compute differences for only one predecessor
 void compute_difference_single(basic_block bb) {
   basic_block pred_bb = single_pred(bb);
   differences[index_bb(bb)] = signatures[index_bb(bb)] ^ signatures[index_bb(pred_bb)];
 }
 
+// compute differences for block with multiple predecessors
 void compute_difference_multi(basic_block bb) {
-  int pred_count = EDGE_COUNT (bb->preds);
+  int pred_count = EDGE_COUNT (bb->preds); // count edges of predecessors
   int pred_indexes[pred_count];
   int i = 0, j;
   edge e;
 	edge_iterator ei;
-	FOR_EACH_EDGE(e, ei, bb->preds){
+	FOR_EACH_EDGE(e, ei, bb->preds){ // gets indexes of all block predecessors
 		pred_indexes[i] = index_bb(e->src);
     i++;
 	}
 
-  differences[index_bb(bb)] = signatures[index_bb(bb)] ^ signatures[pred_indexes[0]];
+  differences[index_bb(bb)] = signatures[index_bb(bb)] ^ signatures[pred_indexes[0]]; // assign signature
   for (j = 0; j < pred_count; j++) {
-    adjusting_signatures[pred_indexes[j]] = signatures[pred_indexes[j]] ^ signatures[pred_indexes[0]];
+    adjusting_signatures[pred_indexes[j]] = signatures[pred_indexes[j]] ^ signatures[pred_indexes[0]]; // assign adjusting signature
   }
 }
 
+// function to call difference computing functions based on count of its predecessors
 void compute_differences() {
   basic_block bb;
   int i;
   differences = (int *) xmalloc(n_basic_blocks * sizeof(int));
   adjusting_signatures = (int *) xmalloc(n_basic_blocks * sizeof(int));
   for (i = 0; i < n_basic_blocks; i++) {
-    adjusting_signatures[i] = -1;
+    adjusting_signatures[i] = -1; // initialize array
   }
 
   FOR_EACH_BB(bb) {
     if (index_bb(bb) == 0) {
-      differences[0] = signatures[0];
+      differences[0] = signatures[0]; // first block should have assigned difference equal to its signature, because it has no predecessors
     }
     else if (!is_branch_fan_in_node(bb)) {
       compute_difference_single(bb);
@@ -127,6 +131,7 @@ void compute_differences() {
   }
 }
 
+// function to handle aliasing problem - to be implemented in future
 void handle_aliasing()
 {
   // TODO
@@ -157,26 +162,31 @@ void insert_instructions()
 
   // create error handling block and handle first block
   bb_first = get_bb_by_index(2);
-  gsi = gsi_start_bb(bb_first);
+  gsi = gsi_start_bb(bb_first); // set iterator to first statement of block
 
-  stmt_assign = gimple_build_assign_with_ops(BIT_XOR_EXPR, G, zero, zero);
-  update_stmt(stmt_assign);
-  gsi_insert_before (&gsi, stmt_assign, GSI_NEW_STMT);
+  // builds and inserts xor operation assignment
+  stmt_assign = gimple_build_assign_with_ops(BIT_XOR_EXPR, G, zero, zero); 
+  update_stmt(stmt_assign); // mark statement as updated
+  gsi_insert_before (&gsi, stmt_assign, GSI_NEW_STMT); // insert before iterator
 
+  // builds and inserts xor operation assignment
   stmt_assign = gimple_build_assign_with_ops(BIT_XOR_EXPR, D, zero, zero);
   update_stmt(stmt_assign);
-  gsi_insert_after (&gsi, stmt_assign, GSI_NEW_STMT);
+  gsi_insert_after (&gsi, stmt_assign, GSI_NEW_STMT); // insert after iterator
 
+  // builds and inserts xor operation assignment
   stmt_assign = gimple_build_assign_with_ops(BIT_XOR_EXPR, G, G, dj);
   update_stmt(stmt_assign);
   gsi_insert_after (&gsi, stmt_assign, GSI_NEW_STMT);
 
+  // if is branch fan in node, insert adjusting assignment
   if (is_branch_fan_in_node(bb_first)) {
     stmt_assign = gimple_build_assign_with_ops(BIT_XOR_EXPR, G, G, D);
     update_stmt(stmt_assign);
     gsi_insert_after (&gsi, stmt_assign, GSI_NEW_STMT);
   }
 
+  // if is parent of branch fan in node, set adjusting signature
   if (adjusting_signatures[index_bb(bb_first)] != -1) {
     adj_sig = build_int_cst (integer_type_node, adjusting_signatures[index_bb(bb_first)]);
     stmt_assign = gimple_build_assign(D, adj_sig);
@@ -184,23 +194,26 @@ void insert_instructions()
     gsi_insert_after (&gsi, stmt_assign, GSI_NEW_STMT);
   }
 
+  // split block after inserted cfcss instructions
   e_correct = split_block (bb_first, gsi_stmt (gsi));
-  execute_on_growing_pred (e_correct);
+  execute_on_growing_pred (e_correct); // call after adding an edge
   bb_correct_first = e_correct->dest;
 
+  // split block and create error block
   e_err = split_block (bb_first, gsi_stmt (gsi));
   execute_on_growing_pred (e_err);
   bb_err = e_err->dest;
 
-  gsi_err = gsi_start_bb(bb_err);
-  stmt_call = gimple_build_call (cfcss_error_handler, 0);
+  gsi_err = gsi_start_bb(bb_err); // set iterator to start of error block
+  stmt_call = gimple_build_call (cfcss_error_handler, 0); // insert call of user defined function cfcss_error_handler from compiled source code
   gsi_insert_after (&gsi_err, stmt_call, GSI_NEW_STMT);
 
-  execute_on_shrinking_pred (e_correct);
-  remove_edge(e_correct);
+  execute_on_shrinking_pred (e_correct); // call before removing edge
+  remove_edge(e_correct); // removes unnecesary edge
 
-  e_correct = make_edge (bb_first, bb_correct_first, EDGE_TRUE_VALUE);
+  e_correct = make_edge (bb_first, bb_correct_first, EDGE_TRUE_VALUE); // creates new edge with correct source and dest block
 
+  // set correct edge flags
   if (e_err->flags & EDGE_FALLTHRU)
   {
     e_err->flags = e_err->flags - EDGE_FALLTHRU;
@@ -210,12 +223,12 @@ void insert_instructions()
     e_err->flags = e_err->flags + EDGE_FALSE_VALUE;
   }
 
-  lbl_correct = gimple_block_label(bb_correct_first);
+  lbl_correct = gimple_block_label(bb_correct_first); // gets predefined block label
   lbl_err = gimple_block_label(bb_err);
-  stmt_cond = gimple_build_cond (EQ_EXPR, G, sj, lbl_correct, lbl_err);
+  stmt_cond = gimple_build_cond (EQ_EXPR, G, sj, lbl_correct, lbl_err); // creates condition statement with TRUE and FALSE block labels
   gsi_insert_after (&gsi, stmt_cond, GSI_NEW_STMT);
 
-
+  // recompute dominators
   if (dom_info_available_p (CDI_DOMINATORS))
   {
     set_immediate_dominator (CDI_DOMINATORS, bb_first, recompute_dominator (CDI_DOMINATORS, bb_first));
@@ -229,6 +242,7 @@ void insert_instructions()
     set_immediate_dominator (CDI_POST_DOMINATORS, bb_err, recompute_dominator (CDI_POST_DOMINATORS, bb_err));
   }
 
+   // this is cycle for the rest of basic blocks, pretty much same as for the first block above, differs only in not creating the error block
   for (i = 3; i < n_original_bbs; i++)
   {
     bb = get_bb_by_index(i);
@@ -330,12 +344,13 @@ static unsigned cfcss_exec(void)
 
     insert_instructions();
 
-    free(signatures);
+    free(signatures); // free allocated structures
     free(differences);
     free(adjusting_signatures);
     return 0;
 }
 
+// pass struct 
 static struct gimple_opt_pass cfcss_pass = 
 {
     .pass.type = GIMPLE_PASS,
@@ -344,18 +359,20 @@ static struct gimple_opt_pass cfcss_pass =
     .pass.execute = cfcss_exec,
 };
 
+// initializes our plugin
 int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
 {
     struct register_pass_info pass;
 
     if (strncmp(ver->basever, cfcss_ver.basever, strlen("4.6")))
-      return -1;
+      return -1; // incorrect gcc version
 
     pass.pass = &cfcss_pass.pass;
     pass.reference_pass_name = "ssa";
     pass.ref_pass_instance_number = 1;
     pass.pos_op = PASS_POS_INSERT_AFTER;
-
+    
+    // register our pass
     register_callback("cfcss", PLUGIN_PASS_MANAGER_SETUP, NULL, &pass);
     register_callback("cfcss", PLUGIN_INFO, NULL, &cfcss_info);
 

@@ -179,7 +179,7 @@ static unsigned error_injector_exec(void)  //inserts a condition statement to ra
     if (!(esrc->flags & EDGE_FALSE_VALUE))
       esrc->flags = esrc->flags + EDGE_FALSE_VALUE;   
 
-    edst = make_edge (bbsrc, bbdstnew, EDGE_TRUE_VALUE);  //createt new TRUE VALUE edge from bbsrc to bbdstnew basic blocks
+    edst = make_edge (bbsrc, bbdstnew, EDGE_TRUE_VALUE);  //create new TRUE VALUE edge from bbsrc to bbdstnew basic blocks
     //recalculate dominators
     if (dom_info_available_p (CDI_DOMINATORS))
     {
@@ -192,31 +192,31 @@ static unsigned error_injector_exec(void)  //inserts a condition statement to ra
     return 0;
 }
 
-/* See tree-pass.h for a list and desctiptions for the fields of this struct */
+// pass struct
 static struct gimple_opt_pass error_injector_pass = 
 {
     .pass.type = GIMPLE_PASS,
-    .pass.name = "error_injector",       /* For use in the dump file */
+    .pass.name = "error_injector",       
     .pass.gate = error_injector_gate,
-    .pass.execute = error_injector_exec, /* Pass handler/callback */
+    .pass.execute = error_injector_exec,
 };
 
 
-/* Return 0 on success or error code on failure */
-int plugin_init(struct plugin_name_args   *info,  /* Argument infor */
-                struct plugin_gcc_version *ver)   /* Version of GCC */
+// initializes plugin
+int plugin_init(struct plugin_name_args   *info,  
+                struct plugin_gcc_version *ver)   
 {
     struct register_pass_info pass;
 
      if (strncmp(ver->basever, error_injector_ver.basever, strlen("4.6")))
-       return -1; /* Incorrect version of gcc */
+       return -1; // incorrect gcc version
 
     pass.pass = &error_injector_pass.pass;
     pass.reference_pass_name = "veclower";
     pass.ref_pass_instance_number = 1;
     pass.pos_op = PASS_POS_INSERT_AFTER;
 
-    /* Tell gcc we want to be called after the first SSA pass */
+    // register our pass
     register_callback("error_injector", PLUGIN_PASS_MANAGER_SETUP, NULL, &pass);
     register_callback("error_injector", PLUGIN_INFO, NULL, &error_injector_info);
 
