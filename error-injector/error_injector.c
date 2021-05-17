@@ -97,8 +97,6 @@ static unsigned error_injector_exec(void)  //inserts a condition statement to ra
     if (fn_rand!=fn)   //if current function is fn_rand-th then continue to generate basic blocks and statements for jump
       return 0;
 
-    printf("Current function is: %s\n", current_function_name());
-
     if (n_basic_blocks < 4)   //function should have at least 2 basic blocks to be able to jump between blocks
     {
       printf("This function isn't suitable for code injection!\n");
@@ -133,17 +131,11 @@ static unsigned error_injector_exec(void)  //inserts a condition statement to ra
       bbsrc = bbdst;
       bbdst = pom;
     }
-    
-    printf("BBsrc %d\n", BBsrc);
-    printf("BBdst %d\n", BBdst);
 
     //generates source statement for condition statement insertion
     STsrc = gen_stmt_num(bbsrc);
     //generates destination statement - this will be a TRUE LABEL for condition statement
     STdst = gen_stmt_num(bbdst);
-
-    printf("STsrc %d\n", STsrc);
-    printf("STdst %d\n", STdst);
 
     //create src and dest iterators
     gsrc = gsi_start_bb(bbsrc);  

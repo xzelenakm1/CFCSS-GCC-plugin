@@ -75,19 +75,14 @@ basic_block get_first_bb() {
 
 void assign_signatures() {
   basic_block bb;
-  printf("Number of basic blocks: %d\n", n_basic_blocks - 2);
   signatures = (int *) xmalloc(n_basic_blocks * sizeof(int));
 
   FOR_EACH_BB(bb) {
     int bb_index = index_bb(bb);
     signatures[bb_index] = bb_index;
-    printf("bb index: %d, predecessor count: %d\n", signatures[bb_index], EDGE_COUNT (bb->preds));
   }
 }
 
-// for vj whose pred(vj) = vi
-// difference dj = si ⊕ sj
-// insert G = G ⊕ dj
 void compute_difference_single(basic_block bb) {
   basic_block pred_bb = single_pred(bb);
   differences[index_bb(bb)] = signatures[index_bb(bb)] ^ signatures[index_bb(pred_bb)];
@@ -103,12 +98,6 @@ void compute_difference_multi(basic_block bb) {
 		pred_indexes[i] = index_bb(e->src);
     i++;
 	}
-  // TODO - handle circular loopback to block
-  printf("For BB index %d, pred_ids are: ", index_bb(bb));
-  for (j = 0; j < pred_count; j++) {
-    printf("%d ", pred_indexes[j]);
-  }
-  printf("\n");
 
   differences[index_bb(bb)] = signatures[index_bb(bb)] ^ signatures[pred_indexes[0]];
   for (j = 0; j < pred_count; j++) {
@@ -165,8 +154,6 @@ void insert_instructions()
   dj = build_int_cst (integer_type_node, differences[0]);
   sj = build_int_cst (integer_type_node, signatures[0]);
   zero = build_int_cst (integer_type_node, 0);
-
-  printf("differences[0]: %d\n", differences[0]);
 
   // create error handling block and handle first block
   bb_first = get_bb_by_index(2);
@@ -248,7 +235,6 @@ void insert_instructions()
     if (bb->index == bb_first->index || bb->index == bb_correct_first->index || bb->index == bb_err->index) {
       continue;
     }
-    printf("%d\n", bb->index);
 
     bb_index = index_bb(bb);
     dj = build_int_cst (integer_type_node, differences[bb_index]);
@@ -318,13 +304,6 @@ static unsigned cfcss_exec(void)
     edge e_after, eend;
     int str_count = 0;
 
-    // ALL_BB_print();
-
-    // if (n_basic_blocks <= 1) {
-    //   printf("Function with only one BB, therefore not implementing CFCSS method\n");
-    //   return 0;
-    // }
-    
     // first compiled function should be cfcss_error_handler
     if (first_function) {
       if (get_identifier(current_function_name()) == get_identifier("cfcss_error_handler"))
@@ -344,20 +323,12 @@ static unsigned cfcss_exec(void)
       }
     }
 
-    printf("****************** START CFCSS ********************\n");
-
     handle_aliasing();
     
     assign_signatures();
     compute_differences();
 
     insert_instructions();
-
-    printf("****************** END CFCSS ********************\n");
-
-    // ALL_BB_print();
-    
-    // verify_flow_info();
 
     free(signatures);
     free(differences);
@@ -376,7 +347,6 @@ static struct gimple_opt_pass cfcss_pass =
 int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
 {
     struct register_pass_info pass;
-    printf("initializing plugin\n");
 
     if (strncmp(ver->basever, cfcss_ver.basever, strlen("4.6")))
       return -1;
@@ -385,8 +355,6 @@ int plugin_init(struct plugin_name_args *info, struct plugin_gcc_version *ver)
     pass.reference_pass_name = "ssa";
     pass.ref_pass_instance_number = 1;
     pass.pos_op = PASS_POS_INSERT_AFTER;
-
-    printf("end of plugin init\n");
 
     register_callback("cfcss", PLUGIN_PASS_MANAGER_SETUP, NULL, &pass);
     register_callback("cfcss", PLUGIN_INFO, NULL, &cfcss_info);
